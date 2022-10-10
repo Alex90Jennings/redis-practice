@@ -13,8 +13,29 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(methodOverride('_method'));
 
-app.use('/', function(req, res, next){
-    res.render('searchusers');
+const client = redis.createClient();
+client.on('connect', function(){
+    console.log(`connected to Redis`)
+})
+
+app.get('/', function(req, res, next){
+    res.render('searchUsers');
+})
+app.post('/users/search', function(req, res, next){
+    const id = req.body.id
+
+    client.hgetall(id, function(err, obj){
+        if(!obj){
+            res.render('searchUsers', {
+                error: `user does not exist`
+            })
+        } else {
+            obj.id = id
+            res.render('details', {
+                user: obj
+            })
+        }
+    });
 })
 
 app.listen(port, function(){
